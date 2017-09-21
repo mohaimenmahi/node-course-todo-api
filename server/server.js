@@ -76,16 +76,28 @@ app.patch('/todo/:id', (req,res) => {
   } else {
     body.completed = false;
     body.completedAt = null;
-
-    Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todos) => {
-      if(!todos) {
+  }
+  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todos) => {
+    if(!todos) {
         return res.status(404).send();
-      }
-      res.send({todos});
-     }).catch((e) => {
+    }
+    res.send({todos});
+  }).catch((e) => {
       res.status(400).send();
-    });
-  };
+  });
+});
+
+app.post('/users', (req,res) => {
+  var body = _.pick(req.body, ['email', 'password']);
+  var user = new User(body);
+  // 8.4 starts here
+  user.save().then(() => {
+    return user.generateAuthToken(); // returns token
+  }).then((token) => { // using returned token on the callback
+    res.header('x-auth', token).send(user); // x-auth = custom header, like http request
+  }).catch((e) => {
+    res.status(400).send(e);
+  })
 });
 
 app.listen(port, () => {
