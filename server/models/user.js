@@ -40,7 +40,7 @@ UserSchema.methods.toJSON = function () { // only email and id will be visible. 
 }
 
 UserSchema.methods.generateAuthToken = function () { // encrypting and setting up tokens
-  var user = this;
+  var user = this; // instance method, for general
   var access = 'auth';
   var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
 
@@ -49,6 +49,31 @@ UserSchema.methods.generateAuthToken = function () { // encrypting and setting u
   return user.save().then(() => {
     return token;
   })
+};
+
+// private routs and auth middlewares (middleware: like glue between os and ui)
+// statics is an object kind of like methods, everything we add on to it turns into a model method as a instance method
+// statics is not an instance, for individuals
+UserSchema.statics.findByToken = function (token) {
+  var User = this; // uppercase U for model method
+  var decoded; // undefined
+
+  // reason of undefined decoded variable
+  // jwt.verify() is gonna through an error if anything goes wrong
+  // if the secret doesnt match the secret of the token is created with of if the token value is manipulated
+  // we wanna catch this error and do something with it
+  // to do it, we gonna use try catch block
+  try { // if any error happens into try block, code is gonna stop execution in the try block and moves into catch block
+    decoded = jwt.verify(token, 'abc123');
+  } catch (e) {
+      return Promise.reject();
+  }
+
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+  });
 };
 
 var User = mongoose.model('User',UserSchema);

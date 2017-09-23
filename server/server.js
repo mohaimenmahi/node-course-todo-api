@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo.js');
 var {User} = require('./models/user.js');
+var {authenticate} = require('./middleware/authenticate.js');
 
 var app = express();
 const port = process.env.PORT || 3000;
@@ -94,10 +95,21 @@ app.post('/users', (req,res) => {
   user.save().then(() => {
     return user.generateAuthToken(); // returns token
   }).then((token) => { // using returned token on the callback
-    res.header('x-auth', token).send(user); // x-auth = custom header, like http request
+    res.header('x-auth', token).send(user); // x-auth = custom header, like http request, lets us to set a header, takes the key value
   }).catch((e) => {
     res.status(400).send(e);
   })
+});
+
+// get request below:
+// private routs and auth middlewares (middleware: like glue between os and ui)
+// express routs into private routs
+
+// adding middleware function to make the routs private
+// go to middleware/authenticate
+
+app.get('/users/me', authenticate, (req,res) => {
+  res.send(req.user);
 });
 
 app.listen(port, () => {
