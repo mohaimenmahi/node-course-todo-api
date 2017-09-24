@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
   email: {
@@ -57,8 +58,7 @@ UserSchema.methods.generateAuthToken = function () { // encrypting and setting u
 UserSchema.statics.findByToken = function (token) {
   var User = this; // uppercase U for model method
   var decoded; // undefined
-
-  // reason of undefined decoded variable
+  // reason of undefined decoded variable:
   // jwt.verify() is gonna through an error if anything goes wrong
   // if the secret doesnt match the secret of the token is created with of if the token value is manipulated
   // we wanna catch this error and do something with it
@@ -75,6 +75,23 @@ UserSchema.statics.findByToken = function (token) {
     'tokens.access': 'auth'
   });
 };
+
+// mongoose middleware, this is gonna run some code before we give an event, and the event before we run the code
+// 'save' is the event
+UserSchema.pre('save', function (next) {
+  var user = this;
+
+  if(user.isModified('password')) {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        user.password = hash;
+        next();
+      });
+    });
+  } else {
+    next();
+  }
+});
 
 var User = mongoose.model('User',UserSchema);
 
