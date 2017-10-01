@@ -52,6 +52,16 @@ UserSchema.methods.generateAuthToken = function () { // encrypting and setting u
   })
 };
 
+UserSchema.methods.removeToken = function (token) {
+  var user = this;
+
+  return user.update({
+    $pull: {
+      tokens: {token}
+    }
+  });
+};
+
 // private routs and auth middlewares (middleware: like glue between os and ui)
 // statics is an object kind of like methods, everything we add on to it turns into a model method as a instance method
 // statics is not an instance, for individuals
